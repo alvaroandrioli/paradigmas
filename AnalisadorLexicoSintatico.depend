@@ -1,0 +1,55 @@
+# depslib dependency file v1.0
+1461962811 source:d:\artur\documents\faculdade\paradigmas de programação\analisadorlexicosintatico\main.cpp
+	"lexeme.h"
+
+1463518480 
+
+1462309032 source:d:\artur\documents\faculdade\paradigmas de programação\analisadorlexicosintatico\lexeme.cpp
+	"lexeme.h"
+
+1461962810 d:\artur\documents\faculdade\paradigmas de programação\analisadorlexicosintatico\lexeme.h
+	<stdio.h>
+	<string.h>
+	<ctype.h>
+	<locale.h>
+	<new>
+
+1463445184 source:d:\artur\desktop\analisadorlexicosintatico\lexeme.cpp
+	"lexeme.h"
+
+1463427006 d:\artur\desktop\analisadorlexicosintatico\lexeme.h
+	<stdio.h>
+	<string.h>
+	<ctype.h>
+	<locale.h>
+	<new>
+
+1462919697 source:d:\artur\desktop\analisadorlexicosintatico\main.cpp
+	"lexeme.h"
+
+1462919697 source:d:\artur\desktop\analisadorlexicosintatico2\main.cpp
+	"lexeme.h"
+
+1464219481 d:\artur\desktop\analisadorlexicosintatico2\lexeme.h
+	<stdio.h>
+	<string.h>
+	<ctype.h>
+	<locale.h>
+	<new>
+
+1463518480 source:d:\artur\desktop\analisadorlexicosintatico2\lexeme.cpp
+	"lexeme.h"
+
+1464753398 source:/home/andrioli/Documentos/faculdade/paradigmas/analisador c/lexeme.cpp
+	"lexeme.h"
+
+1464753398 /home/andrioli/Documentos/faculdade/paradigmas/analisador c/lexeme.h
+	<stdio.h>
+	<string.h>
+	<ctype.h>
+	<locale.h>
+	<new>
+
+1464666644 source:/home/andrioli/Documentos/faculdade/paradigmas/analisador c/main.cpp
+	"lexeme.h"
+
