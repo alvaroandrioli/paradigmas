@@ -19,7 +19,7 @@ char *obterNome(char *nomeExt, FILE *arq) {
 
         if(c[0] != '\n') {
             aux = nome;
-            nome = (char*)malloc(sizeof(char) * (i+2));
+            nome = (char *)malloc(sizeof(char) * (i+2));
             strcpy(nome, "");
 
             if(aux != NULL) {
@@ -105,7 +105,7 @@ int isReservedWord() {
     else if(!strcmp(lexeme, "programa"))
         tokenTemp = PROGRAMA_CODE;
 
-    else if(!strcmp(lexeme, "inicio") || !strcmp(lexeme, "inï¿½cio"))
+    else if(!strcmp(lexeme, "inicio") || !strcmp(lexeme, "início"))
         tokenTemp = INICIO_CODE;
 
     else if(!strcmp(lexeme, "fim"))
@@ -123,10 +123,10 @@ int isReservedWord() {
     else if(!strcmp(lexeme, "se"))
         tokenTemp = SE_CODE;
 
-    else if(!strcmp(lexeme, "entao") || !strcmp(lexeme, "entï¿½o"))
+    else if(!strcmp(lexeme, "entao") || !strcmp(lexeme, "então"))
         tokenTemp = ENTAO_CODE;
 
-    else if(!strcmp(lexeme, "senao") || !strcmp(lexeme, "senï¿½o"))
+    else if(!strcmp(lexeme, "senao") || !strcmp(lexeme, "senão"))
         tokenTemp = SENAO_CODE;
 
     else if(!strcmp(lexeme, "caso"))
@@ -138,13 +138,13 @@ int isReservedWord() {
     else if(!strcmp(lexeme, "enquanto"))
         tokenTemp = ENQUANTO_CODE;
 
-    else if(!strcmp(lexeme, "faca") || !strcmp(lexeme, "faï¿½a"))
+    else if(!strcmp(lexeme, "faca") || !strcmp(lexeme, "faça"))
         tokenTemp = FACA_CODE;
 
     else if(!strcmp(lexeme, "repita"))
         tokenTemp = REPITA_CODE;
 
-    else if(!strcmp(lexeme, "ate") || !strcmp(lexeme, "atï¿½"))
+    else if(!strcmp(lexeme, "ate") || !strcmp(lexeme, "até"))
         tokenTemp = ATE_CODE;
 
     else if(!strcmp(lexeme, "para"))
@@ -157,7 +157,7 @@ void addLastFuncion(var funcion) {
     int i = quantFuncions;
     var *tempPilha = pilhaFuncions;
 
-    pilhaFuncions = (struct tVar*)malloc(sizeof(struct tVar) * (++quantFuncions));
+    pilhaFuncions = (var *)malloc(sizeof(var) * (++quantFuncions));
 
     if(tempPilha != NULL) {
         for(i = 0; i < (quantFuncions-1); i++) {
@@ -176,7 +176,7 @@ void remLastFuncion() {
     int i = quantFuncions;
     var *tempPilha = pilhaFuncions;
 
-    pilhaFuncions = (struct tVar*)malloc(sizeof(var) * (--quantFuncions));
+    pilhaFuncions = (var *)malloc(sizeof(var) * (--quantFuncions));
 
     if(tempPilha != NULL) {
         for(i = 0; i < quantFuncions; i++) {
@@ -242,9 +242,9 @@ int declaraVar(FILE *arq) {
             case 0:
                 tempDeclaredVars = declaredVars;
 
-                declaredVars = (struct tVar*)malloc(sizeof(struct tVar) * (nVars+1));
+                declaredVars = (var *)malloc(sizeof(var) * (nVars+1));
 
-                declaredVars[nVars].nome = (char*)malloc(sizeof(char) * strlen(lexeme));
+                declaredVars[nVars].nome = (char *)malloc(sizeof(char) * (strlen(lexeme)));
 
                 strcpy(declaredVars[nVars].nome, lexeme);
 
@@ -325,20 +325,22 @@ void blocoDePrograma(FILE *arq) {
             instrucoes(arq);
         } else {
             comando(arq);
+            remLastFuncion();
         }
     }
 }
 
 void instrucoes(FILE *arq) {
-    while(nextToken != FIM_CODE && tokenOK == 1) {
+    do {
+        token = nextToken;
+        lex(token, arq);
+
         comando(arq);
-    }
+    } while(nextToken != FIM_CODE && tokenOK == 1);
 }
 
 void comando(FILE *arq) {
-    token = nextToken;
-
-    checkSintaxe(lex(token, arq), arq);
+    checkSintaxe(nextToken, arq);
 }
 
 void calc(FILE *arq) {
@@ -429,7 +431,6 @@ int factor(FILE *arq) {
         return 1;
     else if(nextToken == LEFT_PAREN) {
         quantParenteses++;
-        printf("%d\n", quantParenteses);
 
         token = nextToken;
         lex(token, arq);
@@ -442,7 +443,7 @@ int factor(FILE *arq) {
 
     } else if(nextToken == RIGHT_PAREN) {
         quantParenteses--;
-        printf("%d\n", quantParenteses);
+
         token = nextToken;
         lex(token, arq);
 
@@ -458,16 +459,18 @@ int exprLogica(FILE *arq) {
             if(nextToken == LOG_OP) {
                 token = nextToken;
 
-                if(lex(token, arq) != LOG_OP &&
-                   nextToken != ASSIGN_OP)
-                    return 0;
+                if(lex(token, arq) == LOG_OP ||
+                   nextToken == ASSIGN_OP) {
+                        token = nextToken;
+                        lex(token, arq);
+                   }
 
-            } else if(nextToken != ASSIGN_OP) {
+            } else if(nextToken == ASSIGN_OP) {
+                token = nextToken;
+                lex(token, arq);
+            } else {
                 return 0;
             }
-
-            token = nextToken;
-            lex(token, arq);
 
             if(!expr(arq)) return 0;
         }
@@ -522,6 +525,8 @@ void loop(FILE *arq) {
 }
 
 int checkSintaxe(int tokenExt, FILE *arq) {
+    quantOPAfterClosed++;
+
     switch(tokenExt) {
         case PROGRAMA_CODE:
             programa(arq);
@@ -533,6 +538,13 @@ int checkSintaxe(int tokenExt, FILE *arq) {
 
         case SE_CODE:
             condicional(arq);
+        break;
+
+        case SENAO_CODE:
+            if(lastClosed.tipo == SE_CODE && quantOPAfterClosed == 1)
+                blocoDePrograma(arq);
+            else
+                tokenOK = 0;
         break;
 
         case IDENT:
@@ -556,6 +568,9 @@ int checkSintaxe(int tokenExt, FILE *arq) {
 
             if(tokenOK == 1)
                 remLastFuncion();
+
+        default:
+            quantOPAfterClosed--;
     }
 
     if(tokenOK != -1)
@@ -1100,14 +1115,14 @@ void resultadoSintaxe() {
         }
     }
 
-    printf("\nCï¿½digo da anï¿½lise: %d\n", tokenOK);
+    printf("\nCódigo da análise: %d\n", tokenOK);
 
     if(nextToken != token) {
-        printf("\nErro de sintaxe detectado! Cï¿½digo do erro %d\n", token);
+        printf("\nErro de sintaxe detectado! Código do erro %d\n", token);
         if(tokenOK == -1) {
             switch(token) {
                 case -DOT:
-                    printf("Era esperado \".\" apï¿½s o lexema \"fim\"!\n");
+                    printf("Era esperado \".\" após o lexema \"fim\"!\n");
                 break;
 
                 case -SEMICOLON:
@@ -1123,35 +1138,35 @@ void resultadoSintaxe() {
                 break;
 
                 case -VAR_CODE:
-                    printf("Variï¿½vel \"%s\" nï¿½o declarada!\n", lastIdent);
+                    printf("Variável \"%s\" não declarada!\n", lastIdent);
                 break;
 
                 case -RIGHT_PAREN:
-                    printf("Estï¿½ faltando parenteses a direita!\n");
+                    printf("Está faltando parenteses a direita!\n");
                 break;
 
                 case -LEFT_PAREN:
-                    printf("Estï¿½ sobrando parenteses a direita!\n");
+                    printf("Está sobrando parenteses a direita!\n");
                 break;
 
                 case -FIM_CODE:
-                    printf("Estï¿½ sobrando lexema \"fim\"!\n");
+                    printf("Está sobrando lexema \"fim\"!\n");
                 break;
 
                 case -MOD_OP:
-                    printf("Operaï¿½ï¿½o de resto ï¿½ invï¿½lida para a expressï¿½o definida!\n");
+                    printf("Operação de resto é inválida para a expressão definida!\n");
                 break;
 
                 case -LOGICA_CODE:
-                    printf("Erro na construï¿½ï¿½o do bloco de operaï¿½ï¿½es lï¿½gicas\n");
+                    printf("Erro na construção do bloco de operações lógicas\n");
                 break;
 
                 case -SENAO_CODE:
-                    printf("O lexema \"senao\" precisa vir logo apï¿½s o tï¿½rmino de uma operaï¿½ï¿½o \"se\" anterior!\n");
+                    printf("O lexema \"senao\" precisa vir logo após o término de uma operação \"se\" anterior!\n");
                 break;
 
                 case -ATE_CODE:
-                    printf("O lexema \"ate\" precisa vir depois de um lexema \"repita\" anterior e um conjunto de instruï¿½ï¿½es intermediï¿½rias!\n");
+                    printf("O lexema \"ate\" precisa vir depois de um lexema \"repita\" anterior e um conjunto de instruções intermediárias!\n");
                 break;
 
                 case -ESCOLHA_CODE:
@@ -1159,11 +1174,11 @@ void resultadoSintaxe() {
                 break;
 
                 case -CASO_CODE:
-                    printf("Erro na estruturaï¿½ï¿½o da funï¿½ï¿½o \"caso\"!\n");
+                    printf("Erro na estruturação da função \"caso\"!\n");
                 break;
 
                 case -UNKNOWN:
-                    printf("Erro desconhecido! Ainda existem funï¿½ï¿½es na pilha apï¿½s o tï¿½rmino na anï¿½lise!\n");
+                    printf("Erro desconhecido! Ainda existem funções na pilha após o término na análise!\n");
                 break;
 
                 default:
@@ -1172,15 +1187,15 @@ void resultadoSintaxe() {
         }
 
         if(tokenOK == 0)
-            printf("O lexema \"%s\" com token %d nï¿½o pode vir depois de um lexema com token %d\n", lexeme, nextToken, (-token));
+            printf("O lexema \"%s\" com token %d não pode vir depois de um lexema com token %d\n", lexeme, nextToken, (-token));
     } else
-        printf("\nCï¿½digo completamente verificado!\n");
+        printf("\nCódigo completamente verificado!\n");
 }
 
 void addChar() {
     char *aux = lexeme;
 
-    lexeme = (char*)malloc(sizeof(char) * (lexLen+2));
+    lexeme = (char *)malloc(sizeof(char) * (lexLen+2));
 
     if(aux != NULL) {
         strcpy(lexeme, aux);
@@ -1299,7 +1314,7 @@ int lex(int token, FILE *arq) {
             if(lexeme != NULL)
                 free(lexeme);
 
-            lexeme = (char*)malloc(sizeof(char) * 4);
+            lexeme = (char *)malloc(sizeof(char) * 4);
 
             strcpy(lexeme, "EOF");
         break;
