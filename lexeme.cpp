@@ -6,16 +6,17 @@ unsigned int quantOPAfterClosed;
 char *lexeme, nextChar, *lastIdent, *nomePrograma;
 var *declaredVars, *pilhaFuncions, lastFunction, lastClosed;
 
-char *obterNome(char *nomeExt, FILE *arq) {
+char *obterNome(char *nomeExt, FILE *entrada) {
     char *nome = NULL, *aux, c[2];
     int i = 0;
 
-    if(nomeExt != NULL) free(nomeExt);
+    if(nomeExt != NULL)
+        free(nomeExt);
 
     c[1] = '\0';
 
     do {
-        c[0] = getc(arq);
+        c[0] = getc(entrada);
 
         if(c[0] != '\n') {
             aux = nome;
@@ -154,10 +155,10 @@ int isReservedWord() {
 }
 
 void addLastFuncion(var funcion) {
-    int i = quantFuncions;
+    int i = quantFuncions++;
     var *tempPilha = pilhaFuncions;
 
-    pilhaFuncions = (var *)malloc(sizeof(var) * (++quantFuncions));
+    pilhaFuncions = (var *)malloc(sizeof(var) * (quantFuncions));
 
     if(tempPilha != NULL) {
         for(i = 0; i < (quantFuncions-1); i++) {
@@ -167,7 +168,10 @@ void addLastFuncion(var funcion) {
         free(tempPilha);
     }
 
-    pilhaFuncions[i] = funcion;
+    pilhaFuncions[i].nome = (char *)malloc(sizeof(char) * (strlen(funcion.nome)+1));
+
+    strcpy(pilhaFuncions[i].nome, funcion.nome);
+    pilhaFuncions[i].tipo = funcion.tipo;
 
     printf("Iniciando \"%s\"\n", pilhaFuncions[i].nome);
 }
@@ -186,8 +190,7 @@ void remLastFuncion() {
         if(lastClosed.nome != NULL && lastClosed.nome != lastFunction.nome)
             free(lastClosed.nome);
 
-        lastClosed.nome = tempPilha[i].nome;
-        lastClosed.tipo = tempPilha[i].tipo;
+        lastClosed = tempPilha[i];
         free(tempPilha);
     }
 
@@ -244,7 +247,7 @@ int declaraVar(FILE *arq) {
 
                 declaredVars = (var *)malloc(sizeof(var) * (nVars+1));
 
-                declaredVars[nVars].nome = (char *)malloc(sizeof(char) * (strlen(lexeme)));
+                declaredVars[nVars].nome = (char *)malloc(sizeof(char) * (strlen(lexeme)+1));
 
                 strcpy(declaredVars[nVars].nome, lexeme);
 
@@ -336,7 +339,7 @@ void instrucoes(FILE *arq) {
         lex(token, arq);
 
         comando(arq);
-    } while(nextToken != FIM_CODE && tokenOK == 1);
+    } while(nextToken != FIM_CODE && nextToken != EOF && tokenOK == 1);
 }
 
 void comando(FILE *arq) {
@@ -385,8 +388,12 @@ int expr(FILE *arq) {
         if(nextToken == INT_LIT || nextToken == REAL_LIT || nextToken == IDENT ||
            nextToken == ADD_OP || nextToken == SUB_OP) {
             token = nextToken;
+            lex(token, arq);
 
-            while(lex(token, arq) == ADD_OP || nextToken == SUB_OP) {
+            while(nextToken == ADD_OP || nextToken == SUB_OP) {
+                token = nextToken;
+                lex(token, arq);
+
                 tokenOK = term(arq);
 
                 if(tokenOK != 1)
@@ -407,8 +414,12 @@ int term(FILE *arq) {
         if(nextToken == INT_LIT || nextToken == REAL_LIT || nextToken == IDENT ||
            nextToken == MULT_OP || nextToken == DIV_OP) {
             token = nextToken;
+            lex(token, arq);
 
-            while(lex(token, arq) == MULT_OP || nextToken == DIV_OP) {
+            while(nextToken == MULT_OP || nextToken == DIV_OP) {
+                token = nextToken;
+                lex(token, arq);
+
                 tokenOK = term(arq);
 
                 if(tokenOK != 1)
@@ -1195,7 +1206,7 @@ void resultadoSintaxe() {
 void addChar() {
     char *aux = lexeme;
 
-    lexeme = (char *)malloc(sizeof(char) * (lexLen+2));
+    lexeme = (char *)malloc(sizeof(char) * (lexLen+3));
 
     if(aux != NULL) {
         strcpy(lexeme, aux);
@@ -1232,11 +1243,7 @@ int lex(int token, FILE *arq) {
     if(token != EOF) {
         if(lexeme != NULL) {
             if(lexeme != lastIdent && lexeme != nomePrograma && lexeme != lastFunction.nome) {
-                if(quantFuncions > 0) {
-                    if(lexeme != pilhaFuncions[quantFuncions-1].nome)
-                        free(lexeme);
-                } else
-                    free(lexeme);
+                free(lexeme);
             }
         }
 
@@ -1247,6 +1254,7 @@ int lex(int token, FILE *arq) {
         quantParenteses = 0;
         quantFuncions = 0;
         quantOPAfterClosed = 0;
+        pilhaFuncions = NULL;
         declaredVars = NULL;
         lastIdent = NULL;
         lastFunction.nome = NULL;
@@ -1268,15 +1276,21 @@ int lex(int token, FILE *arq) {
             nextToken = isReservedWord();
 
             if(nextToken == IDENT) {
-                if(lastIdent != NULL) free(lastIdent);
+                if(lastIdent != NULL)
+                    free(lastIdent);
 
-                lastIdent = lexeme;
+                lastIdent = (char *)malloc(sizeof(char) * (strlen(lexeme)+1));
+
+                strcpy(lastIdent, lexeme);
             } else if(nextToken != ENTAO_CODE && nextToken != FACA_CODE &&
                       nextToken != INICIO_CODE && nextToken != FIM_CODE &&
                       nextToken != ESCOLHA_CODE && nextToken != ATE_CODE) {
-                if(lastFunction.nome != NULL) free(lastFunction.nome);
+                if(lastFunction.nome != NULL)
+                    free(lastFunction.nome);
 
-                lastFunction.nome = lexeme;
+                lastFunction.nome = (char *)malloc(sizeof(char) * (strlen(lexeme)+1));
+
+                strcpy(lastFunction.nome, lexeme);
                 lastFunction.tipo = nextToken;
             }
 

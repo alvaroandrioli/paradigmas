@@ -2,9 +2,9 @@
 
 int main(int nArgs, char *sArg[]) {
     setlocale(LC_CTYPE, "");
-    FILE *in_fp, *out_file;
+    FILE *in_fp;
     int nArg = nArgs, nextToken, token, status = 0;
-    char *nomeArq;
+    char *nomeArq = NULL;
 
     do {
         if(nArgs == 1) {
